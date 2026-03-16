@@ -176,7 +176,7 @@ func (s *Server) handleInitialize(req request) *response {
 		Result: serverInfo{
 			ProtocolVersion: "2024-11-05",
 			Capabilities:    capabilities{Tools: toolsCap{ListChanged: false}},
-			ServerInfo:      nameVersion{Name: "lattice", Version: "0.3.0"},
+			ServerInfo:      nameVersion{Name: "lattice", Version: "0.4.0"},
 		},
 	}
 }

@@ -29,6 +29,9 @@ lattice apply inversion "designing microservices architecture" --no-llm
 # Search for models
 lattice search "scaling"
 
+# Record a decision and track it
+lattice decide "raise prices 20%" --quick --prediction "churn under 5%"
+
 # Browse everything
 lattice list
 ```
@@ -45,6 +48,9 @@ lattice list
 | `info <slug>` | Show full model details | No |
 | `add <name> [--from URL]` | Add a custom model | Yes |
 | `remove <slug>` | Remove a user-added model | No |
+| `decide <decision>` | Record a decision with model analysis + prediction | Optional |
+| `journal [--due]` | View decision journal, filter by review date | No |
+| `journal review <id>` | Review a past decision, record outcome | No |
 | `serve` | Start MCP server (stdio) | No |
 | `history [--limit N]` | View session history | No |
 | `history clear` | Delete all history | No |
@@ -98,7 +104,41 @@ Custom models are immediately searchable. They follow the same markdown format a
 ```yaml
 llm_cmd: "claude -p"    # or "gemini -p", "codex exec", etc.
 default_models: 3        # how many models to apply in `think`
+vault_path: ""           # optional: Obsidian vault path for decision sync
+vault_folder: "decisions" # folder within vault (default: "decisions")
 ```
+
+## Decision Journal
+
+Track decisions, apply mental models, record predictions, and review outcomes over time.
+
+```bash
+# Record a decision (guided: models + thinking steps + prediction prompt)
+lattice decide "raise prices 20%"
+
+# Quick mode: skip thinking steps, just capture prediction
+lattice decide "raise prices 20%" --quick --prediction "churn under 5%"
+
+# Project-local (ADR-style, saves to ./decisions/)
+lattice decide "use postgres over mongo" --project
+
+# Force specific models
+lattice decide "hire vs outsource" --models inversion,trade-offs
+
+# View recent decisions
+lattice journal
+lattice journal --limit 50
+
+# Show decisions due for review
+lattice journal --due
+
+# Review a past decision
+lattice journal review d-20260317-001
+```
+
+Decisions are saved as markdown files with YAML frontmatter in `~/.config/lattice/journal/`. Review dates are automatically set to 30 and 90 days out.
+
+If `vault_path` is set in config, entries are also copied to your Obsidian vault.
 
 ## MCP Server
 

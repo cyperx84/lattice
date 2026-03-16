@@ -10,6 +10,8 @@ import (
 type Config struct {
 	LLMCmd        string `yaml:"llm_cmd"`
 	DefaultModels int    `yaml:"default_models"`
+	VaultPath     string `yaml:"vault_path,omitempty"`
+	VaultFolder   string `yaml:"vault_folder,omitempty"`
 }
 
 func DefaultConfig() *Config {
