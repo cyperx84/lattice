@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/cyperx84/lattice/internal/config"
 	"github.com/spf13/cobra"
@@ -120,7 +122,15 @@ func runLLMForAdd(prompt, cmdStr string) (string, error) {
 		return "", fmt.Errorf("no LLM command configured — set llm_cmd in ~/.config/lattice/config.yml")
 	}
 
-	cmd := exec.Command(parts[0], parts[1:]...)
+	timeoutSec := timeout
+	if timeoutSec <= 0 {
+		timeoutSec = 60
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
 	cmd.Stdin = strings.NewReader(prompt)
 
 	var stdout, stderr bytes.Buffer
@@ -128,6 +138,9 @@ func runLLMForAdd(prompt, cmdStr string) (string, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("LLM timed out after %ds", timeoutSec)
+		}
 		return "", fmt.Errorf("LLM command failed: %w\n%s", err, stderr.String())
 	}
 

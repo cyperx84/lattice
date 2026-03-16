@@ -36,6 +36,9 @@ func runThinkCmd(cmd *cobra.Command, args []string) error {
 	if effectiveLLM == "" {
 		effectiveLLM = cfg.LLMCmd
 	}
+	if noLLM {
+		effectiveLLM = ""
+	}
 
 	n := cfg.DefaultModels
 	var specific []string
@@ -46,8 +49,11 @@ func runThinkCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	result, err := think.Think(problem, idx, modelFiles, n, specific, effectiveLLM, verbose)
+	result, err := think.Think(problem, idx, modelFiles, n, specific, effectiveLLM, verbose, timeout)
 	if err != nil {
+		if strings.Contains(err.Error(), "no relevant models") {
+			fmt.Fprintf(cmd.ErrOrStderr(), "Hint: try 'lattice suggest \"%s\"' for broader recommendations\n", problem)
+		}
 		return err
 	}
 

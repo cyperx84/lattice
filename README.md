@@ -31,15 +31,39 @@ lattice suggest "I'm deciding whether to hire more engineers or outsource"
 # Get more suggestions
 lattice suggest "team conflict resolution" --count 10
 
+# Show full details for a model
+lattice info inversion
+lattice info inversion --json
+
 # List all models
 lattice list
 
 # Filter by category
 lattice list --category "General Thinking Tools"
 
+# Add a custom model (requires LLM)
+lattice add "Network Effects"
+
+# Remove a user-added model
+lattice remove network_effects
+
 # Start MCP server (for Claude Desktop, Cursor, Claude Code, etc.)
 lattice serve
 ```
+
+## Command Reference
+
+| Command | Description | Requires LLM |
+|---------|-------------|:---:|
+| `think <problem>` | Surface top models and apply thinking steps | Optional |
+| `apply <slug> <context>` | Apply one model's thinking steps to a context | Optional |
+| `search <keyword>` | Search model index by keyword | No |
+| `suggest <situation>` | Recommend models for a situation | No |
+| `list` | List all models or filter by category | No |
+| `info <slug>` | Show full details for a mental model | No |
+| `add <name>` | Add a new custom mental model | Yes |
+| `remove <slug>` | Remove a user-added model | No |
+| `serve` | Start MCP server on stdio | No |
 
 ## Flags
 
@@ -47,6 +71,8 @@ All commands support:
 - `--json` — structured JSON output
 - `--llm-cmd` — LLM command for synthesis (default: `claude -p`)
 - `--verbose` — show progress
+- `--no-llm` — skip LLM calls entirely (use static steps/questions only)
+- `--timeout` — LLM timeout in seconds (default: 60)
 
 ## Configuration
 
@@ -139,6 +165,13 @@ Add to `.cursor/mcp.json` in your project:
 
 ```bash
 claude mcp add lattice lattice serve
+```
+
+## Running Tests
+
+```bash
+go test ./...
+go vet ./...
 ```
 
 ## Integration

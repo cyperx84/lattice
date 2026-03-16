@@ -2,10 +2,12 @@ package think
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/cyperx84/lattice/internal/apply"
 	"github.com/cyperx84/lattice/internal/index"
@@ -20,7 +22,7 @@ type Result struct {
 }
 
 // Think searches for the top N models relevant to the problem, applies each, and synthesizes.
-func Think(problem string, idx *index.ModelIndex, modelFiles map[string]string, n int, specificModels []string, llmCmd string, verbose bool) (*Result, error) {
+func Think(problem string, idx *index.ModelIndex, modelFiles map[string]string, n int, specificModels []string, llmCmd string, verbose bool, timeoutSec int) (*Result, error) {
 	var entries []index.ModelEntry
 
 	if len(specificModels) > 0 {
@@ -64,7 +66,7 @@ func Think(problem string, idx *index.ModelIndex, modelFiles map[string]string, 
 			model.Category = entry.Category
 		}
 
-		applyResult, err := apply.Apply(model, entry.Slug, problem, llmCmd, verbose)
+		applyResult, err := apply.Apply(model, entry.Slug, problem, llmCmd, verbose, timeoutSec)
 		if err != nil {
 			if verbose {
 				fmt.Printf("[think] Failed to apply %s: %v\n", entry.Name, err)
@@ -77,7 +79,7 @@ func Think(problem string, idx *index.ModelIndex, modelFiles map[string]string, 
 
 	// Synthesize if LLM is available
 	if llmCmd != "" && len(result.Models) > 1 {
-		summary, err := synthesize(problem, result.Models, llmCmd, verbose)
+		summary, err := synthesize(problem, result.Models, llmCmd, verbose, timeoutSec)
 		if err != nil {
 			if verbose {
 				fmt.Printf("[think] Synthesis failed: %v\n", err)
@@ -90,7 +92,7 @@ func Think(problem string, idx *index.ModelIndex, modelFiles map[string]string, 
 	return result, nil
 }
 
-func synthesize(problem string, models []apply.Result, llmCmd string, verbose bool) (string, error) {
+func synthesize(problem string, models []apply.Result, llmCmd string, verbose bool, timeoutSec int) (string, error) {
 	var b strings.Builder
 	b.WriteString("Synthesize the insights from these mental models applied to the following problem.\n\n")
 	b.WriteString(fmt.Sprintf("## Problem\n%s\n\n", problem))
@@ -117,7 +119,7 @@ func synthesize(problem string, models []apply.Result, llmCmd string, verbose bo
 	b.WriteString("4. Gives 2-3 concrete next actions based on the combined analysis\n")
 	b.WriteString("Keep it under 300 words.\n")
 
-	return callLLM(b.String(), llmCmd, verbose)
+	return callLLM(b.String(), llmCmd, verbose, timeoutSec)
 }
 
 // FormatResult formats a ThinkResult as human-readable text.
@@ -149,7 +151,7 @@ func FormatJSON(r *Result) (string, error) {
 	return string(data), nil
 }
 
-func callLLM(prompt, cmdStr string, verbose bool) (string, error) {
+func callLLM(prompt, cmdStr string, verbose bool, timeoutSec int) (string, error) {
 	if verbose {
 		fmt.Printf("[think] Running LLM command: %s\n", cmdStr)
 	}
@@ -159,7 +161,14 @@ func callLLM(prompt, cmdStr string, verbose bool) (string, error) {
 		return "", fmt.Errorf("empty LLM command")
 	}
 
-	cmd := exec.Command(parts[0], parts[1:]...)
+	if timeoutSec <= 0 {
+		timeoutSec = 60
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
 	cmd.Stdin = strings.NewReader(prompt)
 
 	var stdout, stderr bytes.Buffer
@@ -167,6 +176,9 @@ func callLLM(prompt, cmdStr string, verbose bool) (string, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("LLM timed out after %ds", timeoutSec)
+		}
 		return "", fmt.Errorf("command failed: %w\nstderr: %s", err, stderr.String())
 	}
 

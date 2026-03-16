@@ -2,10 +2,12 @@ package apply
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/cyperx84/lattice/internal/modelfile"
 )
@@ -23,7 +25,7 @@ type Result struct {
 
 // Apply applies a mental model to a given context.
 // If llmCmd is provided, it uses the LLM for synthesis; otherwise returns the model's steps.
-func Apply(model *modelfile.Model, slug, context, llmCmd string, verbose bool) (*Result, error) {
+func Apply(model *modelfile.Model, slug, context, llmCmd string, verbose bool, timeoutSec int) (*Result, error) {
 	result := &Result{
 		ModelName:  model.Name,
 		ModelSlug:  slug,
@@ -35,7 +37,7 @@ func Apply(model *modelfile.Model, slug, context, llmCmd string, verbose bool) (
 
 	if llmCmd != "" {
 		prompt := buildApplyPrompt(model, context)
-		synthesis, err := callLLM(prompt, llmCmd, verbose)
+		synthesis, err := callLLM(prompt, llmCmd, verbose, timeoutSec)
 		if err != nil {
 			if verbose {
 				fmt.Printf("[apply] LLM call failed: %v, falling back to static output\n", err)
@@ -103,7 +105,7 @@ func FormatJSON(r *Result) (string, error) {
 	return string(data), nil
 }
 
-func callLLM(prompt, cmdStr string, verbose bool) (string, error) {
+func callLLM(prompt, cmdStr string, verbose bool, timeoutSec int) (string, error) {
 	if verbose {
 		fmt.Printf("[apply] Running LLM command: %s\n", cmdStr)
 	}
@@ -113,7 +115,14 @@ func callLLM(prompt, cmdStr string, verbose bool) (string, error) {
 		return "", fmt.Errorf("empty LLM command")
 	}
 
-	cmd := exec.Command(parts[0], parts[1:]...)
+	if timeoutSec <= 0 {
+		timeoutSec = 60
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
 	cmd.Stdin = strings.NewReader(prompt)
 
 	var stdout, stderr bytes.Buffer
@@ -121,6 +130,9 @@ func callLLM(prompt, cmdStr string, verbose bool) (string, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("LLM timed out after %ds", timeoutSec)
+		}
 		return "", fmt.Errorf("command failed: %w\nstderr: %s", err, stderr.String())
 	}
 

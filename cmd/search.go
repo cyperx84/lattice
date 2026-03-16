@@ -40,6 +40,8 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	if len(results) == 0 {
 		fmt.Printf("No models found for: %s\n", query)
+		fmt.Println("\nTips: try broader terms like 'decision', 'risk', 'strategy', 'team', or 'growth'")
+		fmt.Println("Or use 'lattice suggest' for relevance-ranked recommendations")
 		return nil
 	}
 
