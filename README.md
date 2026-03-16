@@ -2,6 +2,8 @@
 
 Mental models engine — apply Charlie Munger's latticework of 98 cognitive frameworks to any problem.
 
+Part of the [CyperX CLI ecosystem](#ecosystem-integration): works standalone, as an MCP server, or integrated with multiplan, content-breakdown, clwatch, and OpenClaw agents.
+
 ## Install
 
 ```bash
@@ -10,128 +12,100 @@ brew install cyperx84/tap/lattice
 go install github.com/cyperx84/lattice@latest
 ```
 
-## Usage
+## Quick Start
 
 ```bash
-# Think through a problem (surfaces top 3 models + applies thinking steps)
-lattice think "Should we build or buy our auth system?"
+# What models should I use? (instant, no LLM needed)
+lattice suggest "should I hire or outsource"
 
-# Use specific models
-lattice think "Scaling our API" --models inversion,second-order-thinking,bottlenecks
+# Think through a problem (applies top 3 models)
+lattice think "should we build or buy our auth system" --no-llm
 
-# Search for relevant models
-lattice search "decision making"
+# Apply a specific model
+lattice apply inversion "designing microservices architecture" --no-llm
 
-# Apply a single model
-lattice apply inversion "designing microservices architecture"
+# Search for models
+lattice search "scaling"
 
-# Get model suggestions for a situation (no LLM needed)
-lattice suggest "I'm deciding whether to hire more engineers or outsource"
-
-# Get more suggestions
-lattice suggest "team conflict resolution" --count 10
-
-# Show full details for a model
-lattice info inversion
-lattice info inversion --json
-
-# List all models
+# Browse everything
 lattice list
-
-# Filter by category
-lattice list --category "General Thinking Tools"
-
-# Add a custom model (requires LLM)
-lattice add "Network Effects"
-
-# Remove a user-added model
-lattice remove network_effects
-
-# Start MCP server (for Claude Desktop, Cursor, Claude Code, etc.)
-lattice serve
 ```
 
 ## Command Reference
 
-| Command | Description | Requires LLM |
+| Command | Description | Needs LLM? |
 |---------|-------------|:---:|
-| `think <problem>` | Surface top models and apply thinking steps | Optional |
-| `apply <slug> <context>` | Apply one model's thinking steps to a context | Optional |
-| `search <keyword>` | Search model index by keyword | No |
 | `suggest <situation>` | Recommend models for a situation | No |
-| `list` | List all models or filter by category | No |
-| `info <slug>` | Show full details for a mental model | No |
-| `add <name>` | Add a new custom mental model | Yes |
+| `think <problem>` | Surface top models + apply thinking steps | Optional |
+| `apply <slug> <context>` | Apply one model to a context | Optional |
+| `search <keyword>` | Search model index | No |
+| `list [--category "..."]` | List all models | No |
+| `info <slug>` | Show full model details | No |
+| `add <name> [--from URL]` | Add a custom model | Yes |
 | `remove <slug>` | Remove a user-added model | No |
-| `serve` | Start MCP server on stdio | No |
+| `serve` | Start MCP server (stdio) | No |
 
-## Flags
+## Global Flags
 
-All commands support:
-- `--json` — structured JSON output
-- `--llm-cmd` — LLM command for synthesis (default: `claude -p`)
-- `--verbose` — show progress
-- `--no-llm` — skip LLM calls entirely (use static steps/questions only)
-- `--timeout` — LLM timeout in seconds (default: 60)
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--json` | Structured JSON output | off |
+| `--no-llm` | Skip LLM, return static steps/questions | off |
+| `--llm-cmd` | LLM command for synthesis | `claude -p` |
+| `--timeout` | LLM timeout in seconds | 60 |
+| `--verbose` | Show progress | off |
+
+## Model Categories
+
+98 models across 8 disciplines:
+
+| Category | IDs | Examples |
+|----------|-----|----------|
+| General Thinking Tools | m01-m09 | First principles, inversion, second-order thinking |
+| Physics/Chemistry/Biology | m10-m29 | Leverage, inertia, feedback loops, ecosystems |
+| Systems Thinking | m30-m40 | Bottlenecks, scale, margin of safety, emergence |
+| Mathematics | m41-m47 | Randomness, regression to mean, local vs global maxima |
+| Economics | m48-m59 | Trade-offs, scarcity, creative destruction |
+| Art | m60-m70 | Framing, audience, contrast, rhythm |
+| Warfare & Strategy | m71-m75 | Asymmetric warfare, seeing the front |
+| Human Nature & Judgment | m76-m98 | Cognitive biases, incentives, social proof |
+
+## Custom Models
+
+Add your own models — they're stored in `~/.config/lattice/models/` and merged with built-in models at runtime:
+
+```bash
+# Generate a new model via LLM
+lattice add "Network Effects"
+lattice add "Lindy Effect" --from "https://fs.blog/lindy-effect/"
+
+# Remove a custom model
+lattice remove network_effects
+```
+
+Custom models are immediately searchable. They follow the same markdown format as built-in models.
 
 ## Configuration
 
 `~/.config/lattice/config.yml`:
 
 ```yaml
-llm_cmd: "claude -p"
-default_models: 3
+llm_cmd: "claude -p"    # or "gemini -p", "codex exec", etc.
+default_models: 3        # how many models to apply in `think`
 ```
 
-## Model Categories
+## MCP Server
 
-| Category | Models | Examples |
-|----------|--------|----------|
-| General Thinking Tools | m01-m09 | First principles, inversion, second-order thinking |
-| Physics/Chemistry/Biology | m10-m29 | Leverage, inertia, feedback loops |
-| Systems Thinking | m30-m40 | Bottlenecks, scale, margin of safety |
-| Mathematics | m41-m47 | Randomness, regression to mean |
-| Economics | m48-m59 | Trade-offs, scarcity, creative destruction |
-| Art | m60-m70 | Framing, audience, contrast |
-| Warfare & Strategy | m71-m75 | Asymmetric warfare, seeing the front |
-| Human Nature & Judgment | m76-m98 | Cognitive biases, incentives, social proof |
-
-## Suggest Command
-
-`lattice suggest` recommends which mental models to use for a situation **without applying them**. It's a fast, LLM-free recommender.
+lattice includes a [Model Context Protocol](https://modelcontextprotocol.io/) server so AI assistants can use mental models as tools. No API keys required — all responses use the built-in model data.
 
 ```bash
-$ lattice suggest "should I hire or outsource?"
-
-Suggested models for: "should I hire or outsource?"
-
-1. Trade-offs & Opportunity Cost (Economics)
-   Every decision closes other doors. Map the opportunity cost of each path.
-   → Why: Relevant to: hiring decisions, resource allocation
-
-2. Circle of Competence (General Thinking Tools)
-   Know what you're good at. Outsource what falls outside your circle.
-   → Why: Model directly addresses competence
-
-3. Specialization (Economics)
-   Focus drives mastery. Consider where specialization serves you best.
-   → Why: Relevant to: outsourcing, team structure
+lattice serve              # start on stdio
+lattice serve --verbose    # debug logging to stderr
 ```
 
-Supports `--json` for structured output and `--count N` to control how many suggestions (default 5).
+Exposes 5 tools: `think`, `suggest`, `search`, `apply`, `list`.
 
-## MCP Server Mode
-
-lattice includes a built-in [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server, so AI assistants can use mental models as tools.
-
-```bash
-lattice serve              # start MCP server on stdio
-lattice serve --verbose    # with debug logging to stderr
-```
-
-The MCP server exposes 5 tools: `think`, `suggest`, `search`, `apply`, and `list`. No LLM or API keys required — all tools return the model's built-in thinking steps and coaching questions directly.
-
-### Setup for Claude Desktop
+### Claude Desktop
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -146,9 +120,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-### Setup for Cursor
+### Cursor
 
-Add to `.cursor/mcp.json` in your project:
+Add to `.cursor/mcp.json`:
 
 ```json
 {
@@ -161,22 +135,100 @@ Add to `.cursor/mcp.json` in your project:
 }
 ```
 
-### Setup for Claude Code
+### Claude Code
 
 ```bash
 claude mcp add lattice lattice serve
 ```
 
-## Running Tests
+## Ecosystem Integration
+
+Lattice is designed to interoperate with the CyperX CLI ecosystem. Each integration is optional — if lattice isn't on PATH, the other tools skip it gracefully.
+
+### multiplan
+
+[multiplan](https://github.com/cyperx84/multiplan) runs 4 models in parallel with lens-based prompts. Lattice adds **Phase 0 — Mental Model Framing** before planning starts.
 
 ```bash
-go test ./...
-go vet ./...
+# Automatic: multiplan detects lattice on PATH
+multiplan "Design a rate limiting system"
+# → Phase 0: lattice surfaces relevant models (e.g., Bottlenecks, Scale, Trade-offs)
+# → Phase 1: each model's lens prompt includes the mental model framing
+# → Output: lattice_framing.md in the run directory
+
+# Skip lattice framing
+multiplan "Design a cache layer" --skip-lattice
 ```
 
-## Integration
+### content-breakdown
 
-lattice integrates with:
-- **multiplan** — Phase 0 mental model framing before parallel planning
-- **content-breakdown** — Mental models lens + `--think` flag
-- **clwatch** — `think` command for changelog mental model analysis
+[content-breakdown](https://github.com/cyperx84/content-breakdown) transforms videos/articles into structured notes. Lattice adds:
+
+1. **Mental models lens** — a new lens (`--lens mental-models`) that surfaces which cognitive frameworks the content uses
+2. **`--think` flag** — appends a mental models analysis section to the output
+
+```bash
+# Apply mental models lens
+breakdown run "https://youtube.com/watch?v=..." --lens mental-models
+
+# Add mental models to any breakdown
+breakdown run "https://youtube.com/watch?v=..." --think
+```
+
+### clwatch
+
+[clwatch](https://github.com/cyperx84/clwatch) tracks AI coding CLI changelogs. Lattice adds mental model tagging:
+
+```bash
+# Tag recent changes with mental models
+clwatch think claude-code
+# → "Claude Code /simplify = Friction Reduction + Efficiency"
+
+# Also appears in diff output
+clwatch diff claude-code --since 7d
+# → includes 🧠 Mental Models section
+```
+
+### OpenClaw Agents
+
+Lattice is installed as a shared [OpenClaw](https://github.com/openclaw/openclaw) skill at `~/.openclaw/skills/lattice/`. Any OpenClaw agent (including those created by [ClawForge](https://github.com/cyperx84/clawforge)) can use it automatically.
+
+Trigger phrases: "think through", "apply mental models", "inversion", "second-order thinking", "what framework should I use", etc.
+
+### How it all connects
+
+```
+┌──────────────────────────────────────────────────┐
+│                   OpenClaw Agents                 │
+│         (Claw, Builder, any ClawForge agent)      │
+│                        │                          │
+│              lattice skill (auto)                  │
+└────────────────────────┬─────────────────────────┘
+                         │
+              ┌──────────┴──────────┐
+              │      lattice        │
+              │   98 mental models  │
+              │   suggest/think/    │
+              │   apply/search      │
+              └──────────┬──────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+    multiplan    content-breakdown    clwatch
+   (Phase 0)      (--think flag)    (think cmd)
+   model framing  model analysis    model tagging
+```
+
+## Development
+
+```bash
+git clone https://github.com/cyperx84/lattice
+cd lattice
+go build ./...     # build
+go test ./...      # test (19 tests)
+go vet ./...       # lint
+```
+
+## License
+
+MIT — [CyperX](https://github.com/cyperx84)
