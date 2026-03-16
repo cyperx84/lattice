@@ -26,7 +26,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 	context := strings.Join(args[1:], " ")
 	cfg := config.Load()
 
-	idx, modelFiles, err := loadEmbeddedData()
+	idx, modelFiles, err := loadAllData()
 	if err != nil {
 		return err
 	}

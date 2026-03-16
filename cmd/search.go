@@ -22,7 +22,7 @@ func init() {
 func runSearch(cmd *cobra.Command, args []string) error {
 	query := strings.Join(args, " ")
 
-	idx, _, err := loadEmbeddedData()
+	idx, _, err := loadAllData()
 	if err != nil {
 		return err
 	}

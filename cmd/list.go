@@ -22,7 +22,7 @@ func init() {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	idx, _, err := loadEmbeddedData()
+	idx, _, err := loadAllData()
 	if err != nil {
 		return err
 	}

@@ -27,7 +27,7 @@ func runThinkCmd(cmd *cobra.Command, args []string) error {
 	problem := strings.Join(args, " ")
 	cfg := config.Load()
 
-	idx, modelFiles, err := loadEmbeddedData()
+	idx, modelFiles, err := loadAllData()
 	if err != nil {
 		return err
 	}
