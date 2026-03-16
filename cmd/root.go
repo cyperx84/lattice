@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cyperx84/lattice/internal/color"
 	"github.com/spf13/cobra"
 )
 
@@ -12,10 +13,11 @@ var (
 	llmCmd     string
 	verbose    bool
 	noLLM      bool
+	noHistory  bool
 	timeout    int
 )
 
-var version = "0.2.0"
+var version = "0.3.0"
 
 var rootCmd = &cobra.Command{
 	Use:   "lattice",
@@ -38,5 +40,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&llmCmd, "llm-cmd", "", "LLM command for synthesis (default: from config or 'claude -p')")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noLLM, "no-llm", false, "Skip LLM calls entirely")
+	rootCmd.PersistentFlags().BoolVar(&noHistory, "no-history", false, "Skip saving to history")
 	rootCmd.PersistentFlags().IntVar(&timeout, "timeout", 60, "LLM timeout in seconds")
+}
+
+// setupColor configures color output based on flags and environment
+func setupColor() {
+	if jsonOutput {
+		color.Disable()
+	}
 }

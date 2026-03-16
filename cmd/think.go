@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cyperx84/lattice/internal/apply"
+	"github.com/cyperx84/lattice/internal/color"
 	"github.com/cyperx84/lattice/internal/config"
+	"github.com/cyperx84/lattice/internal/history"
 	"github.com/cyperx84/lattice/internal/think"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +27,8 @@ func init() {
 }
 
 func runThinkCmd(cmd *cobra.Command, args []string) error {
+	setupColor()
+
 	problem := strings.Join(args, " ")
 	cfg := config.Load()
 
@@ -57,6 +62,24 @@ func runThinkCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Save to history (unless --no-history)
+	if !noHistory {
+		mgr, histErr := history.NewManager()
+		if histErr == nil {
+			var modelSlugs []string
+			for _, m := range result.Models {
+				modelSlugs = append(modelSlugs, m.ModelSlug)
+			}
+			entry := &history.Entry{
+				Type:    "think",
+				Problem: problem,
+				Models:  modelSlugs,
+				Summary: result.Summary,
+			}
+			_ = mgr.Save(entry) // Ignore errors silently
+		}
+	}
+
 	if jsonOutput {
 		out, err := think.FormatJSON(result)
 		if err != nil {
@@ -64,8 +87,49 @@ func runThinkCmd(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println(out)
 	} else {
-		fmt.Print(think.FormatResult(result))
+		fmt.Print(formatThinkResult(result))
 	}
 
 	return nil
+}
+
+func formatThinkResult(r *think.Result) string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("%s %s\n\n", color.Bold("# Thinking:"), r.Problem))
+	b.WriteString(fmt.Sprintf("Models applied: %s\n\n", color.Bold(fmt.Sprintf("%d", len(r.Models)))))
+
+	for _, m := range r.Models {
+		b.WriteString(formatApplyResultColored(&m))
+		b.WriteString("\n---\n\n")
+	}
+
+	if r.Summary != "" {
+		b.WriteString(fmt.Sprintf("%s\n\n", color.Bold("## Synthesis")))
+		b.WriteString(r.Summary)
+		b.WriteString("\n")
+	}
+
+	return b.String()
+}
+
+func formatApplyResultColored(r *apply.Result) string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("%s\n", color.BoldCyan(fmt.Sprintf("## %s", r.ModelName))))
+	b.WriteString(fmt.Sprintf("Category: %s\n\n", r.Category))
+
+	if r.Synthesis != "" {
+		b.WriteString(r.Synthesis)
+		b.WriteString("\n")
+	} else {
+		b.WriteString(fmt.Sprintf("%s\n", color.Bold("### Thinking Steps")))
+		for i, step := range r.Steps {
+			b.WriteString(fmt.Sprintf("%d. %s\n", i+1, step))
+		}
+		b.WriteString(fmt.Sprintf("\n%s\n", color.Bold("### Coaching Questions")))
+		for _, q := range r.Questions {
+			b.WriteString(fmt.Sprintf("- %s\n", q))
+		}
+	}
+
+	return b.String()
 }

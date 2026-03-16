@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cyperx84/lattice/internal/color"
 	"github.com/cyperx84/lattice/internal/modelfile"
 	"github.com/spf13/cobra"
 )
@@ -21,6 +22,8 @@ func init() {
 }
 
 func runInfo(cmd *cobra.Command, args []string) error {
+	setupColor()
+
 	slug := args[0]
 
 	idx, modelFiles, err := loadAllData()
@@ -80,17 +83,17 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	}
 
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("# %s\n\n", model.Name))
+	b.WriteString(fmt.Sprintf("# %s\n\n", color.BoldCyan(model.Name)))
 	b.WriteString(fmt.Sprintf("ID:       %s\n", entry.ID))
 	b.WriteString(fmt.Sprintf("Slug:     %s\n", entry.Slug))
 	b.WriteString(fmt.Sprintf("Category: %s\n\n", model.Category))
 
 	if model.Description != "" {
-		b.WriteString(fmt.Sprintf("## Description\n%s\n\n", model.Description))
+		b.WriteString(fmt.Sprintf("%s\n%s\n\n", color.Bold("## Description"), model.Description))
 	}
 
 	if len(model.ThinkingSteps) > 0 {
-		b.WriteString("## Thinking Steps\n")
+		b.WriteString(fmt.Sprintf("%s\n", color.Bold("## Thinking Steps")))
 		for i, step := range model.ThinkingSteps {
 			b.WriteString(fmt.Sprintf("%d. %s\n", i+1, step))
 		}
@@ -98,7 +101,7 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(model.CoachingQuestions) > 0 {
-		b.WriteString("## Coaching Questions\n")
+		b.WriteString(fmt.Sprintf("%s\n", color.Bold("## Coaching Questions")))
 		for _, q := range model.CoachingQuestions {
 			b.WriteString(fmt.Sprintf("- %s\n", q))
 		}
@@ -106,11 +109,11 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	}
 
 	if model.WhenToAvoid != "" {
-		b.WriteString(fmt.Sprintf("## When to Avoid\n%s\n\n", model.WhenToAvoid))
+		b.WriteString(fmt.Sprintf("%s\n%s\n\n", color.Bold("## When to Avoid"), model.WhenToAvoid))
 	}
 
 	if model.Keywords != "" {
-		b.WriteString(fmt.Sprintf("## Keywords\n%s\n", model.Keywords))
+		b.WriteString(fmt.Sprintf("%s\n%s\n", color.Bold("## Keywords"), model.Keywords))
 	}
 
 	fmt.Print(b.String())

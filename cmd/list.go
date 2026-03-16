@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cyperx84/lattice/internal/color"
 	"github.com/cyperx84/lattice/internal/index"
 	"github.com/spf13/cobra"
 )
@@ -22,6 +23,8 @@ func init() {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
+	setupColor()
+
 	idx, _, err := loadAllData()
 	if err != nil {
 		return err
@@ -51,9 +54,9 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	if listCategory != "" {
-		fmt.Printf("%s (%d models):\n\n", listCategory, len(models))
+		fmt.Printf("%s (%d models):\n\n", color.BoldBlue(listCategory), len(models))
 	} else {
-		fmt.Printf("All models (%d total):\n\n", len(models))
+		fmt.Printf("All models (%s total):\n\n", color.Bold(fmt.Sprintf("%d", len(models))))
 	}
 
 	currentCat := ""
@@ -61,10 +64,10 @@ func runList(cmd *cobra.Command, args []string) error {
 		if m.Category != currentCat {
 			currentCat = m.Category
 			if listCategory == "" {
-				fmt.Printf("\n  %s\n", currentCat)
+				fmt.Printf("\n  %s\n", color.BoldBlue(currentCat))
 			}
 		}
-		fmt.Printf("    %-4s %-40s %s\n", m.ID, m.Name, m.Slug)
+		fmt.Printf("    %-4s %s  %s\n", m.ID, color.Cyan(fmt.Sprintf("%-40s", m.Name)), color.Dim(m.Slug))
 	}
 
 	return nil

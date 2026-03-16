@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cyperx84/lattice/internal/color"
 	"github.com/cyperx84/lattice/internal/index"
 	"github.com/spf13/cobra"
 )
@@ -32,6 +33,8 @@ type suggestion struct {
 }
 
 func runSuggest(cmd *cobra.Command, args []string) error {
+	setupColor()
+
 	situation := strings.Join(args, " ")
 
 	idx, _, err := loadAllData()
@@ -68,11 +71,14 @@ func runSuggest(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Suggested models for: \"%s\"\n\n", situation)
 	for i, s := range suggestions {
-		fmt.Printf("%d. %s (%s)\n", i+1, s.Name, s.Category)
+		fmt.Printf("%s. %s %s\n",
+			color.Bold(fmt.Sprintf("%d", i+1)),
+			color.Cyan(s.Name),
+			color.Dim("("+s.Category+")"))
 		fmt.Printf("   %s\n", s.Summary)
-		fmt.Printf("   → Why: %s\n\n", s.Why)
+		fmt.Printf("   %s Why: %s\n\n", color.Arrow(), s.Why)
 	}
-	fmt.Printf("→ Run: lattice think \"%s\" to apply these models\n", situation)
+	fmt.Printf("%s Run: lattice think \"%s\" to apply these models\n", color.Arrow(), situation)
 
 	return nil
 }

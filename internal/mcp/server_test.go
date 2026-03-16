@@ -147,8 +147,8 @@ func TestInitialize(t *testing.T) {
 	if info.ServerInfo.Name != "lattice" {
 		t.Errorf("expected server name 'lattice', got %q", info.ServerInfo.Name)
 	}
-	if info.ServerInfo.Version != "0.2.0" {
-		t.Errorf("expected version '0.2.0', got %q", info.ServerInfo.Version)
+	if info.ServerInfo.Version != "0.3.0" {
+		t.Errorf("expected version '0.3.0', got %q", info.ServerInfo.Version)
 	}
 }
 

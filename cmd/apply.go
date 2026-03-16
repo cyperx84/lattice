@@ -6,6 +6,7 @@ import (
 
 	"github.com/cyperx84/lattice/internal/apply"
 	"github.com/cyperx84/lattice/internal/config"
+	"github.com/cyperx84/lattice/internal/history"
 	"github.com/cyperx84/lattice/internal/modelfile"
 	"github.com/spf13/cobra"
 )
@@ -22,6 +23,8 @@ func init() {
 }
 
 func runApply(cmd *cobra.Command, args []string) error {
+	setupColor()
+
 	slug := args[0]
 	context := strings.Join(args[1:], " ")
 	cfg := config.Load()
@@ -77,6 +80,21 @@ func runApply(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Save to history (unless --no-history)
+	if !noHistory {
+		mgr, histErr := history.NewManager()
+		if histErr == nil {
+			entry := &history.Entry{
+				Type:    "apply",
+				Slug:    slug,
+				Problem: context,
+				Models:  []string{slug},
+				Summary: result.Synthesis,
+			}
+			_ = mgr.Save(entry)
+		}
+	}
+
 	if jsonOutput {
 		out, err := apply.FormatJSON(result)
 		if err != nil {
@@ -84,7 +102,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println(out)
 	} else {
-		fmt.Print(apply.FormatResult(result))
+		fmt.Print(formatApplyResultColored(result))
 	}
 
 	return nil

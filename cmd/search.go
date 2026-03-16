@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cyperx84/lattice/internal/color"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,8 @@ func init() {
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
+	setupColor()
+
 	query := strings.Join(args, " ")
 
 	idx, _, err := loadAllData()
@@ -45,9 +48,12 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	fmt.Printf("Found %d model(s) matching \"%s\":\n\n", len(results), query)
+	fmt.Printf("Found %s matching \"%s\":\n\n", color.Bold(fmt.Sprintf("%d model(s)", len(results))), query)
 	for _, m := range results {
-		fmt.Printf("  %-30s [%s] %s\n", m.Name, m.Category, m.Slug)
+		fmt.Printf("  %s %s %s\n",
+			color.Cyan(fmt.Sprintf("%-30s", m.Name)),
+			color.Dim("["+m.Category+"]"),
+			color.Dim(m.Slug))
 		if m.Summary != "" {
 			fmt.Printf("  %s\n\n", m.Summary)
 		}

@@ -1,0 +1,61 @@
+project_name: lattice
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    binary: lattice
+    ldflags:
+      - -s -w -X github.com/cyperx84/lattice/cmd.version={{.Version}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+
+brews:
+  - repository:
+      owner: cyperx84
+      name: homebrew-tap
+    folder: Formula
+    homepage: "https://github.com/cyperx84/lattice"
+    description: "Mental models engine — apply Munger's latticework to any problem"
+    license: "MIT"
+    test: |
+      system "#{bin}/lattice version"
+    install: |
+      bin.install "lattice"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - 'merge conflict'
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: cyperx84
+    name: lattice

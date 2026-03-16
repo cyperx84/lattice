@@ -1,5 +1,7 @@
 # lattice
 
+[![CI](https://github.com/cyperx84/lattice/actions/workflows/ci.yml/badge.svg)](https://github.com/cyperx84/lattice/actions/workflows/ci.yml)
+
 Mental models engine — apply Charlie Munger's latticework of 98 cognitive frameworks to any problem.
 
 Part of the [CyperX CLI ecosystem](#ecosystem-integration): works standalone, as an MCP server, or integrated with multiplan, content-breakdown, clwatch, and OpenClaw agents.
@@ -44,6 +46,9 @@ lattice list
 | `add <name> [--from URL]` | Add a custom model | Yes |
 | `remove <slug>` | Remove a user-added model | No |
 | `serve` | Start MCP server (stdio) | No |
+| `history [--limit N]` | View session history | No |
+| `history clear` | Delete all history | No |
+| `completion <shell>` | Generate shell completion script | No |
 
 ## Global Flags
 
@@ -54,6 +59,7 @@ lattice list
 | `--llm-cmd` | LLM command for synthesis | `claude -p` |
 | `--timeout` | LLM timeout in seconds | 60 |
 | `--verbose` | Show progress | off |
+| `--no-history` | Skip saving to history | off |
 
 ## Model Categories
 
@@ -217,6 +223,56 @@ Trigger phrases: "think through", "apply mental models", "inversion", "second-or
     multiplan    content-breakdown    clwatch
    (Phase 0)      (--think flag)    (think cmd)
    model framing  model analysis    model tagging
+```
+
+## Shell Completions
+
+Lattice supports shell completion for bash, zsh, and fish via Cobra's built-in completion:
+
+```bash
+# Zsh (add to ~/.zshrc)
+eval "$(lattice completion zsh)"
+# or for persistent completion:
+lattice completion zsh > "${fpath[1]}/_lattice"
+
+# Bash (add to ~/.bashrc)
+eval "$(lattice completion bash)"
+
+# Fish
+lattice completion fish > ~/.config/fish/completions/lattice.fish
+```
+
+## Session History
+
+Lattice saves a history of `think` and `apply` sessions to `~/.config/lattice/history/`:
+
+```bash
+lattice history              # show last 20 sessions
+lattice history --limit 50   # show more
+lattice history --json        # structured JSON output
+lattice history clear         # delete all history
+```
+
+To skip saving a session: `lattice think "..." --no-history`
+
+## Color Output
+
+Lattice uses ANSI colors for readable terminal output. To disable:
+
+```bash
+NO_COLOR=1 lattice list    # disable color (https://no-color.org/)
+lattice list --json         # JSON output is always color-free
+```
+
+## Releases
+
+Lattice uses [GoReleaser](https://goreleaser.com/) for cross-platform releases. Binaries are available for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, and windows/amd64.
+
+Releases are triggered automatically when a version tag is pushed:
+
+```bash
+git tag v0.x.0
+git push --tags
 ```
 
 ## Development
